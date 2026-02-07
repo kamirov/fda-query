@@ -10,7 +10,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 import { FieldsMultiselect } from "./FieldsMultiselect"
 import { GenericNameInput } from "./GenericNameInput"
@@ -19,14 +19,44 @@ import { useFdaQuery } from "@/hooks/use-fda-query"
 import type { FDAFieldName } from "@/lib/fda-fields"
 import { ResultsAccordion } from "./ResultsAccordion"
 import { DownloadButton } from "./DownloadButton"
+import {
+  loadApiKey,
+  loadPersistedState,
+  saveApiKey,
+  savePersistedState,
+  clearPersistedState,
+} from "@/lib/storage"
 
 export function QueryForm() {
-  const [apiKey, setApiKey] = useState("")
-  const [selectedFields, setSelectedFields] = useState<FDAFieldName[]>([])
-  const [genericInput, setGenericInput] = useState("")
-  const [genericList, setGenericList] = useState<string[]>([])
+  const initialState = useMemo(() => loadPersistedState(), [])
 
-  const { results, isQuerying, allFinished, query, reset } = useFdaQuery()
+  const [apiKey, setApiKey] = useState(() => loadApiKey())
+  const [selectedFields, setSelectedFields] = useState<FDAFieldName[]>(
+    () => initialState?.selectedFields ?? []
+  )
+  const [genericInput, setGenericInput] = useState(
+    () => initialState?.genericInput ?? ""
+  )
+  const [genericList, setGenericList] = useState<string[]>(
+    () => initialState?.genericList ?? []
+  )
+
+  const { results, isQuerying, allFinished, query, reset } = useFdaQuery(
+    initialState?.results
+  )
+
+  useEffect(() => {
+    saveApiKey(apiKey)
+  }, [apiKey])
+
+  useEffect(() => {
+    savePersistedState({
+      selectedFields,
+      genericInput,
+      genericList,
+      results,
+    })
+  }, [selectedFields, genericInput, genericList, results])
 
   const handleQuery = () => {
     const fromInput = parseGenericNames(genericInput)
@@ -49,6 +79,14 @@ export function QueryForm() {
   const handleInputChange = (value: string) => {
     setGenericInput(value)
     setGenericList([])
+  }
+
+  const handleReset = () => {
+    clearPersistedState()
+    setSelectedFields([])
+    setGenericInput("")
+    setGenericList([])
+    reset()
   }
 
   const downloadDisabled = Object.keys(results).length === 0 || !allFinished
@@ -94,12 +132,19 @@ export function QueryForm() {
             </p>
           )}
 
-          <Button
-            onClick={handleQuery}
-            disabled={isQuerying}
-          >
-            Query openFDA
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleQuery}
+              disabled={isQuerying}
+            >
+              Query openFDA
+            </Button>
+            {hasResults && (
+              <Button variant="outline" onClick={handleReset}>
+                Reset
+              </Button>
+            )}
+          </div>
         </SidebarContent>
       </Sidebar>
       <SidebarInset>

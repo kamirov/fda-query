@@ -5,8 +5,8 @@ import type { QueryResult } from "@/types"
 
 type QueryResults = Record<string, QueryResult>
 
-export function useFdaQuery() {
-  const [results, setResults] = useState<QueryResults>({})
+export function useFdaQuery(initialResults?: QueryResults) {
+  const [results, setResults] = useState<QueryResults>(initialResults ?? {})
   const [isQuerying, setIsQuerying] = useState(false)
 
   const query = useCallback(
