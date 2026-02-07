@@ -1,14 +1,22 @@
 import type { FDALabelResponse, FDALabelResult } from "@/types";
-import { FDA_API_BASE, RESPONSE_LENGTH } from "./constants";
+import {
+  COMPOUND_PAGINATION_LIMIT,
+  FDA_API_BASE,
+  RESPONSE_LENGTH,
+} from "./constants";
 
 async function fetchBySubstanceName(
   substanceName: string,
   limit: number,
   apiKey?: string,
+  skip?: number,
 ): Promise<FDALabelResponse> {
   const search = `search=openfda.substance_name:"${encodeURIComponent(substanceName)}"`;
   const limitParam = `limit=${limit}`;
   const params = [search, limitParam];
+  if (skip !== undefined) {
+    params.push(`skip=${skip}`);
+  }
   if (apiKey) {
     params.unshift(`api_key=${encodeURIComponent(apiKey)}`);
   }
@@ -29,9 +37,27 @@ async function fetchBySubstanceName(
   return data;
 }
 
+function extractTotal(data: FDALabelResponse): number {
+  const meta = data.meta as { results?: { total?: number } } | undefined;
+  return meta?.results?.total ?? 0;
+}
+
 function getSubstanceNames(result: FDALabelResult): string[] | undefined {
   const openfda = result.openfda as { substance_name?: string[] } | undefined;
   return openfda?.substance_name;
+}
+
+function resultMatchesCompound(
+  result: FDALabelResult,
+  parts: string[],
+): boolean {
+  const substances = getSubstanceNames(result);
+  if (!Array.isArray(substances) || substances.length !== parts.length) {
+    return false;
+  }
+  return parts.every((part) =>
+    substances.some((s) => s.toLowerCase().includes(part.toLowerCase())),
+  );
 }
 
 export async function fetchCompoundDrugLabel(
@@ -47,21 +73,42 @@ export async function fetchCompoundDrugLabel(
     throw new Error("Compound name is empty or contains only separators");
   }
 
-  const firstPart = parts[0]!;
-  const data = await fetchBySubstanceName(firstPart, RESPONSE_LENGTH, apiKey);
+  // Count step: fetch total for each substance
+  const totals: Record<string, number> = {};
+  for (const part of parts) {
+    const data = await fetchBySubstanceName(part, RESPONSE_LENGTH, apiKey);
+    totals[part] = extractTotal(data);
+  }
 
-  const results = data.results ?? [];
-  for (const result of results) {
-    const substances = getSubstanceNames(result);
-    if (!Array.isArray(substances) || substances.length !== parts.length) {
-      continue;
-    }
-    const allMatch = parts.every((part) =>
-      substances.some((s) => s.toLowerCase().includes(part.toLowerCase())),
+  console.log("Compound drug counts:", totals);
+
+  const substanceWithLowestTotal = parts.reduce((a, b) =>
+    totals[a]! <= totals[b]! ? a : b,
+  );
+  const total = totals[substanceWithLowestTotal] ?? 0;
+
+  // Paginated search through the substance with lowest total
+  let skip = 0;
+  const limit = COMPOUND_PAGINATION_LIMIT;
+  const maxSkip = 25_000;
+
+  while (skip < total && skip <= maxSkip) {
+    const data = await fetchBySubstanceName(
+      substanceWithLowestTotal,
+      limit,
+      apiKey,
+      skip,
     );
-    if (allMatch) {
-      return { ...data, results: [result] };
+    const batch = data.results ?? [];
+    for (const result of batch) {
+      if (resultMatchesCompound(result, parts)) {
+        return {
+          meta: { composite: true },
+          results: [result],
+        };
+      }
     }
+    skip += limit;
   }
 
   throw new Error(

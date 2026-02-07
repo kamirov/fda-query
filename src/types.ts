@@ -9,7 +9,14 @@ export type QueryResult = {
 export type FDALabelResult = Record<string, unknown>
 
 export type FDALabelResponse = {
-  meta?: { disclaimer?: string; terms?: string; license?: string; last_updated?: string; results?: unknown }
+  meta?: {
+    disclaimer?: string
+    terms?: string
+    license?: string
+    last_updated?: string
+    results?: { total?: number }
+    composite?: boolean
+  }
   results?: FDALabelResult[]
   error?: { code?: string; message?: string }
 }
