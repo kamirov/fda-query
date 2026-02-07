@@ -360,7 +360,7 @@ export function QueryForm() {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between gap-3">
-                <CardTitle>Results</CardTitle>
+                {hasResults && <CardTitle>Results</CardTitle>}
                 {hasResults && (
                   <div className="flex items-center gap-2">
                     <ShareButton substances={Object.keys(results)} />
