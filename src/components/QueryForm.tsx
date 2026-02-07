@@ -371,7 +371,7 @@ export function QueryForm() {
                     <CollapsibleTrigger asChild>
                       <button
                         type="button"
-                        className="flex items-center gap-2 text-left text-foreground transition-colors hover:text-foreground/80"
+                        className="flex items-center gap-2 rounded-md px-2 py-1 text-left text-foreground transition-colors hover:bg-accent"
                         aria-label="Toggle results visibility"
                       >
                         <CardTitle>Results</CardTitle>

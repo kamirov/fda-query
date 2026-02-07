@@ -7,7 +7,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { parseCsvFile } from "@/lib/parse-generic-names";
-import { HelpCircle } from "lucide-react";
 import { useRef } from "react";
 
 type GenericNameInputProps = {
@@ -42,16 +41,16 @@ export function GenericNameInput({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2">
         <Label htmlFor="generic-input">Substance name(s)</Label>
         <Popover>
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="rounded-full bg-muted p-0.5 text-muted-foreground hover:text-foreground cursor-pointer"
+              className="flex h-6 w-6 items-center justify-center rounded-full border text-xs text-muted-foreground transition-colors hover:text-foreground"
               aria-label="Help with substance name format"
             >
-              <HelpCircle className="h-3.5 w-3.5" />
+              ?
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-80" align="start">
