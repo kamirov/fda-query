@@ -79,7 +79,7 @@ export function QueryForm() {
 
           {genericList.length > 0 && (
             <p className="text-sm text-muted-foreground">
-              {genericList.length} generic name(s) from CSV
+              From CSV: {genericList.join(", ")}
             </p>
           )}
 

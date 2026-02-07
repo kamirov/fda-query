@@ -34,8 +34,14 @@ export function ResultsAccordion({
   const entries = Object.entries(results)
   if (entries.length === 0) return null
 
+  const firstKey = entries[0]?.[0]
+
   return (
-    <Accordion type="multiple" className="w-full">
+    <Accordion
+      type="multiple"
+      className="w-full"
+      defaultValue={firstKey ? [firstKey] : undefined}
+    >
       {entries.map(([genericName, result]) => (
         <AccordionItem key={genericName} value={genericName}>
           <AccordionTrigger className="gap-2">
@@ -47,7 +53,7 @@ export function ResultsAccordion({
               <p className="text-destructive">{result.error}</p>
             ) : result.status === "success" && result.data ? (
               <ResultsTable
-                data={result.data}
+                data={result.data.results}
                 selectedFields={
                   selectedFields?.length
                     ? selectedFields.map(String)
@@ -68,13 +74,10 @@ function ResultsTable({
   data,
   selectedFields,
 }: {
-  data: { results?: unknown[] }
+  data: unknown[] | undefined
   selectedFields?: string[]
 }) {
-  const rows = flattenForDisplay(
-    data as Parameters<typeof flattenForDisplay>[0],
-    selectedFields
-  )
+  const rows = flattenForDisplay(data, selectedFields)
 
   if (Object.keys(rows).length === 0) {
     return <p className="text-muted-foreground">No data to display</p>

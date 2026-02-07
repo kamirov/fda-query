@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react"
 import { maxConcurrentQueries } from "@/lib/constants"
 import { fetchDrugLabel } from "@/lib/fda-api"
-import type { FDALabelResponse, QueryResult } from "@/types"
+import type { QueryResult } from "@/types"
 
 type QueryResults = Record<string, QueryResult>
 
@@ -70,11 +70,13 @@ export function useFdaQuery() {
 }
 
 export function flattenForDisplay(
-  data: FDALabelResponse,
+  results: unknown[] | undefined,
   selectedFields: string[] | undefined
 ): Record<string, string> {
-  const firstResult = data.results?.[0] as Record<string, unknown> | undefined
-  if (!firstResult) return {}
+  const firstResult = (Array.isArray(results) ? results[0] : undefined) as
+    | Record<string, unknown>
+    | undefined
+  if (!firstResult || typeof firstResult !== "object") return {}
 
   const flatten = (
     obj: Record<string, unknown>,
