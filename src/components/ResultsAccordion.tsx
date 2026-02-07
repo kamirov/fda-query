@@ -44,9 +44,11 @@ export function ResultsAccordion({
     >
       {entries.map(([genericName, result]) => (
         <AccordionItem key={genericName} value={genericName}>
-          <AccordionTrigger className="gap-2">
-            <StatusIcon status={result.status} />
-            <span className="truncate">{genericName}</span>
+          <AccordionTrigger className="py-4">
+            <div className="flex min-w-0 flex-1 items-center justify-start gap-2 text-left">
+              <StatusIcon status={result.status} />
+              <span className="truncate">{genericName}</span>
+            </div>
           </AccordionTrigger>
           <AccordionContent>
             {result.status === "error" && result.error ? (
