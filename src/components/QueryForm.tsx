@@ -18,7 +18,6 @@ import {
   type FDAFieldName,
 } from "@/lib/fda-fields";
 import { parseGenericNames } from "@/lib/parse-generic-names";
-import { cn } from "@/lib/utils";
 import {
   clearPersistedState,
   loadApiKey,
@@ -26,6 +25,7 @@ import {
   saveApiKey,
   savePersistedState,
 } from "@/lib/storage";
+import { cn } from "@/lib/utils";
 import type { QueryResult } from "@/types";
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -201,6 +201,7 @@ export function QueryForm() {
             value={genericInput}
             onChange={handleInputChange}
             onFileUpload={handleFileUpload}
+            uploadedCount={genericList.length}
           />
 
           <div className="flex gap-2">

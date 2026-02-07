@@ -8,12 +8,15 @@ type GenericNameInputProps = {
   value: string;
   onChange: (value: string) => void;
   onFileUpload: (names: string[]) => void;
+  /** Number of substances from the last CSV upload; shown under the button when > 0 */
+  uploadedCount?: number;
 };
 
 export function GenericNameInput({
   value,
   onChange,
   onFileUpload,
+  uploadedCount = 0,
 }: GenericNameInputProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -63,6 +66,12 @@ export function GenericNameInput({
               className="hidden"
               onChange={handleFileChange}
             />
+            {uploadedCount > 0 && (
+              <p className="text-xs text-muted-foreground mt-1">
+                {uploadedCount} substance{uploadedCount === 1 ? "" : "s"} in
+                list
+              </p>
+            )}
           </div>
         </div>
       </div>
