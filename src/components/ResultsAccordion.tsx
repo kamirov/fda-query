@@ -6,7 +6,11 @@ import {
 } from "@/components/ui/accordion"
 import { CheckCircle, Loader2, XCircle } from "lucide-react"
 import type { FDAFieldName } from "@/lib/fda-fields"
-import { flattenForDisplay } from "@/hooks/use-fda-query"
+import {
+  flattenForDisplay,
+  getAvailableFieldKeys,
+  getMissingSelectedFields,
+} from "@/hooks/use-fda-query"
 import type { QueryResult } from "@/types"
 
 type ResultsAccordionProps = {
@@ -82,6 +86,20 @@ function ResultsTable({
   const rows = flattenForDisplay(data, selectedFields)
 
   if (Object.keys(rows).length === 0) {
+    if (selectedFields && selectedFields.length > 0) {
+      const availableKeys = getAvailableFieldKeys(data)
+      const missing = getMissingSelectedFields(availableKeys, selectedFields)
+      if (availableKeys.length > 0) {
+        return (
+          <div className="space-y-2 text-muted-foreground">
+            <p>
+              The fields {missing.join(", ")} are not present in the data.
+            </p>
+            <p>Available fields are: {availableKeys.join(", ")}.</p>
+          </div>
+        )
+      }
+    }
     return <p className="text-muted-foreground">No data to display</p>
   }
 

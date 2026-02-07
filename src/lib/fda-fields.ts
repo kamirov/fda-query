@@ -107,7 +107,23 @@ export const FDA_LABEL_FIELDS = [
   "nonteratogenic_effects_table",
   "nursing_mothers",
   "nursing_mothers_table",
-  "openfda",
+  "openfda.application_number",
+  "openfda.brand_name",
+  "openfda.generic_name",
+  "openfda.manufacturer_name",
+  "openfda.product_ndc",
+  "openfda.product_type",
+  "openfda.route",
+  "openfda.substance_name",
+  "openfda.rxcui",
+  "openfda.spl_id",
+  "openfda.spl_set_id",
+  "openfda.package_ndc",
+  "openfda.original_packager_product_ndc",
+  "openfda.nui",
+  "openfda.pharm_class_epc",
+  "openfda.pharm_class_moa",
+  "openfda.unii",
   "other_safety_information",
   "other_safety_information_table",
   "overdosage",
@@ -181,6 +197,6 @@ export const FDA_LABEL_FIELDS = [
   "when_using",
   "when_using_table",
   "meta",
-] as const
+] as const;
 
-export type FDAFieldName = (typeof FDA_LABEL_FIELDS)[number]
+export type FDAFieldName = (typeof FDA_LABEL_FIELDS)[number];

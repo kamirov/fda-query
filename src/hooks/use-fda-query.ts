@@ -69,6 +69,56 @@ export function useFdaQuery(initialResults?: QueryResults) {
   return { results, isQuerying, allFinished, query, reset }
 }
 
+function flattenToRecord(
+  obj: Record<string, unknown>,
+  prefix = ""
+): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const [key, value] of Object.entries(obj)) {
+    const fullKey = prefix ? `${prefix}.${key}` : key
+    if (value === null || value === undefined) continue
+    if (Array.isArray(value)) {
+      out[fullKey] = value.map((v) => String(v)).join(", ")
+    } else if (typeof value === "object" && !(value instanceof Date)) {
+      Object.assign(
+        out,
+        flattenToRecord(value as Record<string, unknown>, fullKey)
+      )
+    } else {
+      out[fullKey] = String(value)
+    }
+  }
+  return out
+}
+
+export function getAvailableFieldKeys(
+  results: unknown[] | undefined
+): string[] {
+  const firstResult = (Array.isArray(results) ? results[0] : undefined) as
+    | Record<string, unknown>
+    | undefined
+  if (!firstResult || typeof firstResult !== "object") return []
+  return Object.keys(flattenToRecord(firstResult))
+}
+
+function selectedFieldMatchesKey(key: string, selectedField: string): boolean {
+  const keyNormalized = key.replace(/\./g, "_")
+  return (
+    key === selectedField ||
+    keyNormalized === selectedField ||
+    key.startsWith(`${selectedField}.`)
+  )
+}
+
+export function getMissingSelectedFields(
+  availableKeys: string[],
+  selectedFields: string[]
+): string[] {
+  return selectedFields.filter(
+    (f) => !availableKeys.some((k) => selectedFieldMatchesKey(k, f))
+  )
+}
+
 export function flattenForDisplay(
   results: unknown[] | undefined,
   selectedFields: string[] | undefined
@@ -78,26 +128,7 @@ export function flattenForDisplay(
     | undefined
   if (!firstResult || typeof firstResult !== "object") return {}
 
-  const flatten = (
-    obj: Record<string, unknown>,
-    prefix = ""
-  ): Record<string, string> => {
-    const out: Record<string, string> = {}
-    for (const [key, value] of Object.entries(obj)) {
-      const fullKey = prefix ? `${prefix}.${key}` : key
-      if (value === null || value === undefined) continue
-      if (Array.isArray(value)) {
-        out[fullKey] = value.map((v) => String(v)).join(", ")
-      } else if (typeof value === "object" && !(value instanceof Date)) {
-        Object.assign(out, flatten(value as Record<string, unknown>, fullKey))
-      } else {
-        out[fullKey] = String(value)
-      }
-    }
-    return out
-  }
-
-  const flat = flatten(firstResult)
+  const flat = flattenToRecord(firstResult)
 
   if (selectedFields && selectedFields.length > 0) {
     const filtered: Record<string, string> = {}
