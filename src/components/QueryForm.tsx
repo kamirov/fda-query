@@ -360,6 +360,10 @@ export function QueryForm() {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between gap-3">
+                {!hasResults && (
+                  <CardTitle>Search openFDA drug labels</CardTitle>
+                )}
+
                 {hasResults && <CardTitle>Results</CardTitle>}
                 {hasResults && (
                   <div className="flex items-center gap-2">
