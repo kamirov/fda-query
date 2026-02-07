@@ -328,9 +328,18 @@ export function QueryForm() {
           ) : (
             <div className="space-y-2 text-muted-foreground">
               <p>
-                Search openFDA drug labels by generic substance names. Choose
-                which fields to display and to count, run a query, then view,
-                filter, share, or download the results.
+                Search{" "}
+                <a
+                  href="https://open.fda.gov/apis/drug/label/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary underline underline-offset-4 transition-colors hover:text-primary/80"
+                >
+                  openFDA drug labels
+                </a>{" "}
+                by generic substance names. Choose which fields to display and
+                to count, run a query, then view, filter, share, or download the
+                results.
               </p>
               <p>Run a query to see results.</p>
             </div>

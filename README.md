@@ -10,7 +10,7 @@ A web app to query the [openFDA Drug Labels API](https://open.fda.gov/apis/drug/
 - **Lucide React** for icons
 - **Sonner** for toasts
 
-The app uses the public openFDA API. An optional API key (from [openFDA](https://open.fda.gov/apis/authentication/)) can be used for higher rate limits.
+The app uses the public [openFDA Drug Labels API](https://open.fda.gov/apis/drug/label/). An optional API key (from [openFDA](https://open.fda.gov/apis/authentication/)) can be used for higher rate limits.
 
 ## How to run
 
