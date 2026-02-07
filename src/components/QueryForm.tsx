@@ -40,9 +40,26 @@ import { DownloadButton } from "./DownloadButton";
 import { FieldsMultiselect } from "./FieldsMultiselect";
 import { GenericNameInput } from "./GenericNameInput";
 import { ResultsAccordion } from "./ResultsAccordion";
+import { ShareButton } from "./ShareButton";
+
+function parseSubstancesFromUrl(): string[] | null {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get("substances");
+    if (!raw) return null;
+    const names = decodeURIComponent(raw)
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return names.length > 0 ? names : null;
+  } catch {
+    return null;
+  }
+}
 
 export function QueryForm() {
   const initialState = useMemo(() => loadPersistedState(), []);
+  const substancesFromUrl = useMemo(() => parseSubstancesFromUrl(), []);
 
   const [apiKey, setApiKey] = useState(() => loadApiKey());
   const [selectedFields, setSelectedFields] = useState<FDAFieldName[]>(
@@ -51,23 +68,31 @@ export function QueryForm() {
   const [fieldsToCount, setFieldsToCount] = useState<FDAFieldName[]>(
     () => initialState?.fieldsToCount ?? [],
   );
-  const [genericInput, setGenericInput] = useState(
-    () => initialState?.genericInput ?? "",
+  const [genericInput, setGenericInput] = useState(() =>
+    substancesFromUrl ? "" : (initialState?.genericInput ?? ""),
   );
   const [genericList, setGenericList] = useState<string[]>(
-    () => initialState?.genericList ?? [],
+    () => substancesFromUrl ?? initialState?.genericList ?? [],
   );
   const [selectedFilterFields, setSelectedFilterFields] = useState<
     Set<FDAFieldName>
   >(new Set());
 
   const { results, isQuerying, allFinished, query, reset } = useFdaQuery(
-    initialState?.results,
+    substancesFromUrl ? undefined : initialState?.results,
   );
 
   const lastPersistedResultsRef = useRef<Record<string, QueryResult>>(
-    initialState?.results ?? {},
+    substancesFromUrl ? {} : (initialState?.results ?? {}),
   );
+  const hasAutoQueriedRef = useRef(false);
+
+  useEffect(() => {
+    if (substancesFromUrl && !hasAutoQueriedRef.current) {
+      hasAutoQueriedRef.current = true;
+      query(substancesFromUrl, apiKey.trim() || undefined);
+    }
+  }, [substancesFromUrl, apiKey, query]);
 
   useEffect(() => {
     saveApiKey(apiKey);
@@ -233,7 +258,7 @@ export function QueryForm() {
               <CardHeader>
                 <CardTitle>Statistics</CardTitle>
                 <CardDescription>
-                  Click to filter results by field
+                  Click to filter results by field (multiple filters supported)
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -275,10 +300,13 @@ export function QueryForm() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Results</CardTitle>
-                  <DownloadButton
-                    results={results}
-                    disabled={downloadDisabled}
-                  />
+                  <div className="flex items-center gap-2">
+                    <ShareButton substances={Object.keys(results)} />
+                    <DownloadButton
+                      results={results}
+                      disabled={downloadDisabled}
+                    />
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
