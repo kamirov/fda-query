@@ -14,6 +14,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
@@ -38,7 +43,7 @@ import {
 } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import type { QueryResult } from "@/types";
-import { Github, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Github, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DownloadButton } from "./DownloadButton";
@@ -82,6 +87,7 @@ export function QueryForm() {
   const [selectedFilterFields, setSelectedFilterFields] = useState<
     Set<FDAFieldName>
   >(new Set());
+  const [resultsOpen, setResultsOpen] = useState(false);
 
   const { results, isQuerying, allFinished, query, reset } = useFdaQuery(
     substancesFromUrl ? undefined : initialState?.results,
@@ -359,36 +365,53 @@ export function QueryForm() {
           )}
           {hasResults ? (
             <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Results</CardTitle>
-                  <div className="flex items-center gap-2">
-                    <ShareButton substances={Object.keys(results)} />
-                    <DownloadButton
-                      results={results}
-                      disabled={downloadDisabled}
-                    />
+              <Collapsible open={resultsOpen} onOpenChange={setResultsOpen}>
+                <CardHeader>
+                  <div className="flex items-center justify-between gap-3">
+                    <CollapsibleTrigger asChild>
+                      <button
+                        type="button"
+                        className="flex items-center gap-2 text-left text-foreground transition-colors hover:text-foreground/80"
+                        aria-label="Toggle results visibility"
+                      >
+                        <CardTitle>Results</CardTitle>
+                        {resultsOpen ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </button>
+                    </CollapsibleTrigger>
+                    <div className="flex items-center gap-2">
+                      <ShareButton substances={Object.keys(results)} />
+                      <DownloadButton
+                        results={results}
+                        disabled={downloadDisabled}
+                      />
+                    </div>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {selectedFilterFields.size > 0 &&
-                Object.keys(filteredResults).length === 0 ? (
-                  <p className="text-muted-foreground">
-                    No results match the selected field filters.
-                  </p>
-                ) : (
-                  <ResultsAccordion
-                    results={filteredResults}
-                    selectedFields={
-                      selectedFields.length > 0 ? selectedFields : undefined
-                    }
-                  />
-                )}
-              </CardContent>
+                </CardHeader>
+                <CollapsibleContent>
+                  <CardContent>
+                    {selectedFilterFields.size > 0 &&
+                    Object.keys(filteredResults).length === 0 ? (
+                      <p className="text-muted-foreground">
+                        No results match the selected field filters.
+                      </p>
+                    ) : (
+                      <ResultsAccordion
+                        results={filteredResults}
+                        selectedFields={
+                          selectedFields.length > 0 ? selectedFields : undefined
+                        }
+                      />
+                    )}
+                  </CardContent>
+                </CollapsibleContent>
+              </Collapsible>
             </Card>
           ) : (
-            <div className="space-y-2 text-muted-foreground">
+            <div className="space-y-3 text-muted-foreground">
               <p>
                 Search{" "}
                 <a
@@ -402,6 +425,15 @@ export function QueryForm() {
                 by generic substance names. Choose which fields to display and
                 to count, run a query, then view, filter, share, or download the
                 results.
+              </p>
+              <p>
+                Matching uses a case-insensitive wildcard search on{" "}
+                <code>substance_name</code> and only includes labels with the
+                same number of substances you provide. Examples:{" "}
+                <code>metformin</code> matches{" "}
+                <code>metformin hydrochloride</code>;{" "}
+                <code>acetaminophen; caffeine</code> matches when both are
+                present and only two substances are listed.
               </p>
               <p>Run a query to see results.</p>
             </div>

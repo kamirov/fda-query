@@ -83,6 +83,28 @@ export function GenericNameInput({
                   </li>
                 </ul>
               </div>
+              <div className="space-y-2">
+                <p className="font-medium text-foreground">How matching works</p>
+                <p className="text-muted-foreground">
+                  We only match labels with the same number of substances, and
+                  each substance you provide must be contained (case-insensitive,
+                  wildcard on both sides) in the <code>substance_name</code>{" "}
+                  field.
+                </p>
+                <ul className="space-y-2 text-muted-foreground list-disc list-inside">
+                  <li>
+                    Single:{" "}
+                    <code className="text-xs">metformin</code> matches{" "}
+                    <code className="text-xs">metformin hydrochloride</code>
+                  </li>
+                  <li>
+                    Compound:{" "}
+                    <code className="text-xs">acetaminophen; caffeine</code>{" "}
+                    matches when both are present and only two substances are
+                    listed.
+                  </li>
+                </ul>
+              </div>
             </div>
           </PopoverContent>
         </Popover>
