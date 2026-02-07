@@ -200,3 +200,51 @@ export const FDA_LABEL_FIELDS = [
 ] as const;
 
 export type FDAFieldName = (typeof FDA_LABEL_FIELDS)[number];
+
+export const DEFAULT_FIELDS_TO_DISPLAY: readonly FDAFieldName[] = [
+  "abuse",
+  "controlled_substance",
+  "dependence",
+  "drug_abuse_and_dependence",
+  "openfda.brand_name",
+  "openfda.generic_name",
+  "openfda.pharm_class_epc",
+  "openfda.pharm_class_moa",
+  "openfda.substance_name",
+  "laboratory_tests",
+  "ask_doctor",
+  "do_not_use",
+  "other_safety_information",
+  "when_using",
+  "geriatric_use",
+  "labor_and_delivery",
+  "nursing_mothers",
+  "pediatric_use",
+  "pregnancy",
+  "pregnancy_or_breast_feeding",
+  "teratogenic_effects",
+  "use_in_specific_populations",
+  "boxed_warning",
+  "user_safety_warnings",
+  "warnings",
+];
+
+export const DEFAULT_FIELDS_TO_COUNT: readonly FDAFieldName[] = [
+  "abuse",
+  "controlled_substance",
+  "dependence",
+  "drug_abuse_and_dependence",
+  "openfda.substance_name",
+  "laboratory_tests",
+  "ask_doctor",
+  "do_not_use",
+  "nursing_mothers",
+  "pediatric_use",
+  "pregnancy",
+  "pregnancy_or_breast_feeding",
+  "teratogenic_effects",
+  "use_in_specific_populations",
+  "boxed_warning",
+  "user_safety_warnings",
+  "warnings",
+];

@@ -1,31 +1,35 @@
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
-import { FDA_LABEL_FIELDS, type FDAFieldName } from "@/lib/fda-fields"
-import { cn } from "@/lib/utils"
-import { ChevronDown } from "lucide-react"
+} from "@/components/ui/popover";
+import { FDA_LABEL_FIELDS, type FDAFieldName } from "@/lib/fda-fields";
+import { cn } from "@/lib/utils";
+import { ChevronDown } from "lucide-react";
 
 type FieldsMultiselectProps = {
-  selected: FDAFieldName[]
-  onChange: (selected: FDAFieldName[]) => void
-}
+  selected: FDAFieldName[];
+  onChange: (selected: FDAFieldName[]) => void;
+};
 
-export function FieldsMultiselect({ selected, onChange }: FieldsMultiselectProps) {
+export function FieldsMultiselect({
+  selected,
+  onChange,
+}: FieldsMultiselectProps) {
   const toggle = (field: FDAFieldName) => {
     if (selected.includes(field)) {
-      onChange(selected.filter((f) => f !== field))
+      onChange(selected.filter((f) => f !== field));
     } else {
-      onChange([...selected, field])
+      onChange([...selected, field]);
     }
-  }
+  };
 
-  const label = selected.length === 0
-    ? "Select fields to display"
-    : `${selected.length} field${selected.length === 1 ? "" : "s"} selected`
+  const label =
+    selected.length === 0
+      ? "Select fields to display"
+      : `${selected.length} field${selected.length === 1 ? "" : "s"} selected`;
 
   return (
     <div className="space-y-2">
@@ -36,7 +40,7 @@ export function FieldsMultiselect({ selected, onChange }: FieldsMultiselectProps
             role="combobox"
             className={cn(
               "w-full justify-between font-normal",
-              selected.length === 0 && "text-muted-foreground"
+              selected.length === 0 && "text-muted-foreground",
             )}
           >
             {label}
@@ -60,11 +64,6 @@ export function FieldsMultiselect({ selected, onChange }: FieldsMultiselectProps
           </div>
         </PopoverContent>
       </Popover>
-      {selected.length > 0 && (
-        <p className="text-sm text-muted-foreground">
-          Displaying: {selected.join(", ")}
-        </p>
-      )}
     </div>
-  )
+  );
 }

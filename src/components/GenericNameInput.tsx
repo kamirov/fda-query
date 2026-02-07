@@ -33,31 +33,36 @@ export function GenericNameInput({
 
   return (
     <div className="space-y-2">
-      <Label htmlFor="generic-input">Generic name(s)</Label>
+      <Label htmlFor="generic-input">Substance name(s)</Label>
       <div className="flex gap-2">
-        <div className="flex items-center gap-2 w-full">
+        <div className="flex flex-col gap-2 w-full">
           <Input
             id="generic-input"
             placeholder="e.g. ibuprofen or comma/newline separated names"
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="flex-1"
+            className="w-full"
           />
-          <span className="text-sm text-muted-foreground font-medium">or</span>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            Upload CSV
-          </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv"
-            className="hidden"
-            onChange={handleFileChange}
-          />
+          <div className="w-full flex justify-center">
+            <span className="font-bold text-muted-foreground text-xs">or</span>
+          </div>
+          <div className="w-full">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Upload CSV
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          </div>
         </div>
       </div>
     </div>

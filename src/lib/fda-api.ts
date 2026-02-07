@@ -1,16 +1,12 @@
 import type { FDALabelResponse, FDALabelResult } from "@/types";
-import {
-  COMPOUND_QUERY_LIMIT,
-  DEFAULT_LIMIT,
-  FDA_API_BASE,
-} from "./constants";
+import { COMPOUND_QUERY_LIMIT, FDA_API_BASE } from "./constants";
 
 async function fetchBySubstanceName(
   substanceName: string,
   limit: number,
   apiKey?: string,
 ): Promise<FDALabelResponse> {
-  const search = `search=openfda.substance_name:${encodeURIComponent(substanceName)}`;
+  const search = `search=openfda.substance_name:"${encodeURIComponent(substanceName)}"`;
   const limitParam = `limit=${limit}`;
   const params = [search, limitParam];
   if (apiKey) {
@@ -65,9 +61,7 @@ export async function fetchCompoundDrugLabel(
       continue;
     }
     const allMatch = parts.every((part) =>
-      substances.some((s) =>
-        s.toLowerCase().includes(part.toLowerCase()),
-      ),
+      substances.some((s) => s.toLowerCase().includes(part.toLowerCase())),
     );
     if (allMatch) {
       return { ...data, results: [result] };
@@ -86,26 +80,5 @@ export async function fetchDrugLabel(
   if (genericName.includes(";")) {
     return fetchCompoundDrugLabel(genericName, apiKey);
   }
-
-  const search = `search=openfda.generic_name:${encodeURIComponent(genericName)}`;
-  const limit = `limit=${DEFAULT_LIMIT}`;
-  const params = [search, limit];
-  if (apiKey) {
-    params.unshift(`api_key=${encodeURIComponent(apiKey)}`);
-  }
-  const url = `${FDA_API_BASE}?${params.join("&")}`;
-
-  const res = await fetch(url);
-  const data = (await res.json()) as FDALabelResponse;
-
-  if (!res.ok) {
-    const message = data.error?.message ?? `HTTP ${res.status}`;
-    throw new Error(message);
-  }
-
-  if (data.error) {
-    throw new Error(data.error.message ?? "Unknown API error");
-  }
-
-  return data;
+  return fetchBySubstanceName(genericName, COMPOUND_QUERY_LIMIT, apiKey);
 }

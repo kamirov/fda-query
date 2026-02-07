@@ -11,8 +11,12 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { useFdaQuery } from "@/hooks/use-fda-query";
-import type { FDAFieldName } from "@/lib/fda-fields";
 import { getFieldCounts } from "@/lib/count-fields";
+import {
+  DEFAULT_FIELDS_TO_COUNT,
+  DEFAULT_FIELDS_TO_DISPLAY,
+  type FDAFieldName,
+} from "@/lib/fda-fields";
 import { parseGenericNames } from "@/lib/parse-generic-names";
 import {
   clearPersistedState,
@@ -21,8 +25,9 @@ import {
   saveApiKey,
   savePersistedState,
 } from "@/lib/storage";
+import type { QueryResult } from "@/types";
 import { Loader2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DownloadButton } from "./DownloadButton";
 import { FieldsMultiselect } from "./FieldsMultiselect";
@@ -50,19 +55,27 @@ export function QueryForm() {
     initialState?.results,
   );
 
+  const lastPersistedResultsRef = useRef<Record<string, QueryResult>>(
+    initialState?.results ?? {},
+  );
+
   useEffect(() => {
     saveApiKey(apiKey);
   }, [apiKey]);
 
   useEffect(() => {
+    const resultsToSave = allFinished ? results : lastPersistedResultsRef.current;
+    if (allFinished) {
+      lastPersistedResultsRef.current = results;
+    }
     savePersistedState({
       selectedFields,
       fieldsToCount,
       genericInput,
       genericList,
-      results,
+      results: resultsToSave,
     });
-  }, [selectedFields, fieldsToCount, genericInput, genericList, results]);
+  }, [selectedFields, fieldsToCount, genericInput, genericList, results, allFinished]);
 
   const handleQuery = () => {
     const fromInput = parseGenericNames(genericInput);
@@ -89,8 +102,8 @@ export function QueryForm() {
 
   const handleReset = () => {
     clearPersistedState();
-    setSelectedFields([]);
-    setFieldsToCount([]);
+    setSelectedFields([...DEFAULT_FIELDS_TO_DISPLAY]);
+    setFieldsToCount([...DEFAULT_FIELDS_TO_COUNT]);
     setGenericInput("");
     setGenericList([]);
     reset();
@@ -103,7 +116,7 @@ export function QueryForm() {
       allFinished && fieldsToCount.length > 0
         ? getFieldCounts(results, fieldsToCount)
         : null,
-    [allFinished, fieldsToCount, results]
+    [allFinished, fieldsToCount, results],
   );
 
   return (
