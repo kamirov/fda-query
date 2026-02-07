@@ -1,0 +1,113 @@
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { useState } from "react"
+import { toast } from "sonner"
+import { FieldsMultiselect } from "./FieldsMultiselect"
+import { GenericNameInput } from "./GenericNameInput"
+import { parseGenericNames } from "@/lib/parse-generic-names"
+import { useFdaQuery } from "@/hooks/use-fda-query"
+import type { FDAFieldName } from "@/lib/fda-fields"
+import { ResultsAccordion } from "./ResultsAccordion"
+import { DownloadButton } from "./DownloadButton"
+
+export function QueryForm() {
+  const [apiKey, setApiKey] = useState("")
+  const [selectedFields, setSelectedFields] = useState<FDAFieldName[]>([])
+  const [genericInput, setGenericInput] = useState("")
+  const [genericList, setGenericList] = useState<string[]>([])
+
+  const { results, isQuerying, allFinished, query, reset } = useFdaQuery()
+
+  const handleQuery = () => {
+    const fromInput = parseGenericNames(genericInput)
+    const names = genericList.length > 0 ? genericList : fromInput
+
+    if (names.length === 0) {
+      toast.error("Enter at least one generic name or upload a CSV")
+      return
+    }
+
+    reset()
+    query(names, apiKey.trim() || undefined)
+  }
+
+  const handleFileUpload = (names: string[]) => {
+    setGenericList(names)
+    setGenericInput("")
+  }
+
+  const handleInputChange = (value: string) => {
+    setGenericInput(value)
+    setGenericList([])
+  }
+
+  const downloadDisabled = Object.keys(results).length === 0 || !allFinished
+
+  return (
+    <div className="container mx-auto max-w-2xl space-y-6 py-8">
+      <Card>
+        <CardHeader>
+          <CardTitle>Query openFDA Drug Labels</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="api-key">API Key (optional)</Label>
+            <Input
+              id="api-key"
+              type="text"
+              placeholder="API Key (optional)"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Fields to display</Label>
+            <FieldsMultiselect
+              selected={selectedFields}
+              onChange={setSelectedFields}
+            />
+          </div>
+
+          <GenericNameInput
+            value={genericInput}
+            onChange={handleInputChange}
+            onFileUpload={handleFileUpload}
+          />
+
+          {genericList.length > 0 && (
+            <p className="text-sm text-muted-foreground">
+              {genericList.length} generic name(s) from CSV
+            </p>
+          )}
+
+          <Button
+            onClick={handleQuery}
+            disabled={isQuerying}
+          >
+            Query openFDA
+          </Button>
+        </CardContent>
+      </Card>
+
+      {(Object.keys(results).length > 0) && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Results</CardTitle>
+              <DownloadButton results={results} disabled={downloadDisabled} />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ResultsAccordion
+              results={results}
+              selectedFields={selectedFields.length > 0 ? selectedFields : undefined}
+            />
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}
