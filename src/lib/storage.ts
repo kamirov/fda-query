@@ -6,6 +6,7 @@ export const STORAGE_KEY_PERSISTED = "fda-query-persisted"
 
 export type PersistedState = {
   selectedFields: FDAFieldName[]
+  fieldsToCount: FDAFieldName[]
   genericInput: string
   genericList: string[]
   results: Record<string, QueryResult>
@@ -56,6 +57,7 @@ export function loadPersistedState(): PersistedState | null {
     if (!parsed || typeof parsed !== "object") return null
     return {
       selectedFields: parseSelectedFields(parsed.selectedFields),
+      fieldsToCount: parseSelectedFields(parsed.fieldsToCount),
       genericInput: parseString(parsed.genericInput),
       genericList: parseStringArray(parsed.genericList),
       results: parseResults(parsed.results),

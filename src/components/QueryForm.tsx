@@ -1,7 +1,7 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Sidebar,
   SidebarContent,
@@ -9,88 +9,102 @@ import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
-} from "@/components/ui/sidebar"
-import { useEffect, useMemo, useState } from "react"
-import { toast } from "sonner"
-import { FieldsMultiselect } from "./FieldsMultiselect"
-import { GenericNameInput } from "./GenericNameInput"
-import { parseGenericNames } from "@/lib/parse-generic-names"
-import { useFdaQuery } from "@/hooks/use-fda-query"
-import type { FDAFieldName } from "@/lib/fda-fields"
-import { ResultsAccordion } from "./ResultsAccordion"
-import { DownloadButton } from "./DownloadButton"
+} from "@/components/ui/sidebar";
+import { useFdaQuery } from "@/hooks/use-fda-query";
+import type { FDAFieldName } from "@/lib/fda-fields";
+import { getFieldCounts } from "@/lib/count-fields";
+import { parseGenericNames } from "@/lib/parse-generic-names";
 import {
+  clearPersistedState,
   loadApiKey,
   loadPersistedState,
   saveApiKey,
   savePersistedState,
-  clearPersistedState,
-} from "@/lib/storage"
+} from "@/lib/storage";
+import { Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { DownloadButton } from "./DownloadButton";
+import { FieldsMultiselect } from "./FieldsMultiselect";
+import { GenericNameInput } from "./GenericNameInput";
+import { ResultsAccordion } from "./ResultsAccordion";
 
 export function QueryForm() {
-  const initialState = useMemo(() => loadPersistedState(), [])
+  const initialState = useMemo(() => loadPersistedState(), []);
 
-  const [apiKey, setApiKey] = useState(() => loadApiKey())
+  const [apiKey, setApiKey] = useState(() => loadApiKey());
   const [selectedFields, setSelectedFields] = useState<FDAFieldName[]>(
-    () => initialState?.selectedFields ?? []
-  )
+    () => initialState?.selectedFields ?? [],
+  );
+  const [fieldsToCount, setFieldsToCount] = useState<FDAFieldName[]>(
+    () => initialState?.fieldsToCount ?? [],
+  );
   const [genericInput, setGenericInput] = useState(
-    () => initialState?.genericInput ?? ""
-  )
+    () => initialState?.genericInput ?? "",
+  );
   const [genericList, setGenericList] = useState<string[]>(
-    () => initialState?.genericList ?? []
-  )
+    () => initialState?.genericList ?? [],
+  );
 
   const { results, isQuerying, allFinished, query, reset } = useFdaQuery(
-    initialState?.results
-  )
+    initialState?.results,
+  );
 
   useEffect(() => {
-    saveApiKey(apiKey)
-  }, [apiKey])
+    saveApiKey(apiKey);
+  }, [apiKey]);
 
   useEffect(() => {
     savePersistedState({
       selectedFields,
+      fieldsToCount,
       genericInput,
       genericList,
       results,
-    })
-  }, [selectedFields, genericInput, genericList, results])
+    });
+  }, [selectedFields, fieldsToCount, genericInput, genericList, results]);
 
   const handleQuery = () => {
-    const fromInput = parseGenericNames(genericInput)
-    const names = genericList.length > 0 ? genericList : fromInput
+    const fromInput = parseGenericNames(genericInput);
+    const names = genericList.length > 0 ? genericList : fromInput;
 
     if (names.length === 0) {
-      toast.error("Enter at least one generic name or upload a CSV")
-      return
+      toast.error("Enter at least one generic name or upload a CSV");
+      return;
     }
 
-    reset()
-    query(names, apiKey.trim() || undefined)
-  }
+    reset();
+    query(names, apiKey.trim() || undefined);
+  };
 
   const handleFileUpload = (names: string[]) => {
-    setGenericList(names)
-    setGenericInput("")
-  }
+    setGenericList(names);
+    setGenericInput("");
+  };
 
   const handleInputChange = (value: string) => {
-    setGenericInput(value)
-    setGenericList([])
-  }
+    setGenericInput(value);
+    setGenericList([]);
+  };
 
   const handleReset = () => {
-    clearPersistedState()
-    setSelectedFields([])
-    setGenericInput("")
-    setGenericList([])
-    reset()
-  }
+    clearPersistedState();
+    setSelectedFields([]);
+    setFieldsToCount([]);
+    setGenericInput("");
+    setGenericList([]);
+    reset();
+  };
 
-  const downloadDisabled = Object.keys(results).length === 0 || !allFinished
-  const hasResults = Object.keys(results).length > 0
+  const downloadDisabled = Object.keys(results).length === 0 || !allFinished;
+  const hasResults = Object.keys(results).length > 0;
+  const fieldCounts = useMemo(
+    () =>
+      allFinished && fieldsToCount.length > 0
+        ? getFieldCounts(results, fieldsToCount)
+        : null,
+    [allFinished, fieldsToCount, results]
+  );
 
   return (
     <SidebarProvider>
@@ -120,6 +134,14 @@ export function QueryForm() {
             />
           </div>
 
+          <div className="space-y-2">
+            <Label>Fields to count</Label>
+            <FieldsMultiselect
+              selected={fieldsToCount}
+              onChange={setFieldsToCount}
+            />
+          </div>
+
           <GenericNameInput
             value={genericInput}
             onChange={handleInputChange}
@@ -133,10 +155,7 @@ export function QueryForm() {
           )}
 
           <div className="flex gap-2">
-            <Button
-              onClick={handleQuery}
-              disabled={isQuerying}
-            >
+            <Button onClick={handleQuery} disabled={isQuerying}>
               Query openFDA
             </Button>
             {hasResults && (
@@ -152,29 +171,63 @@ export function QueryForm() {
           <SidebarTrigger />
           <span className="font-semibold">Results</span>
         </header>
-        <main className="flex-1 overflow-auto p-4">
+        <main className="flex-1 overflow-auto p-4 space-y-4">
+          {fieldsToCount.length > 0 && hasResults && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Statistics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {!allFinished ? (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Waiting for all queries to finish…</span>
+                  </div>
+                ) : fieldCounts ? (
+                  <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
+                    {fieldsToCount.map((field) => (
+                      <div
+                        key={field}
+                        className="flex flex-col items-center justify-center rounded-lg border bg-card p-4 text-center"
+                      >
+                        <span className="text-xs text-muted-foreground">
+                          {field}
+                        </span>
+                        <span className="mt-1 text-2xl font-semibold">
+                          {fieldCounts[field] ?? 0}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </CardContent>
+            </Card>
+          )}
           {hasResults ? (
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Results</CardTitle>
-                  <DownloadButton results={results} disabled={downloadDisabled} />
+                  <DownloadButton
+                    results={results}
+                    disabled={downloadDisabled}
+                  />
                 </div>
               </CardHeader>
               <CardContent>
                 <ResultsAccordion
                   results={results}
-                  selectedFields={selectedFields.length > 0 ? selectedFields : undefined}
+                  selectedFields={
+                    selectedFields.length > 0 ? selectedFields : undefined
+                  }
                 />
               </CardContent>
             </Card>
           ) : (
-            <p className="text-muted-foreground">
-              Run a query to see results.
-            </p>
+            <p className="text-muted-foreground">Run a query to see results.</p>
           )}
         </main>
       </SidebarInset>
     </SidebarProvider>
-  )
+  );
 }
