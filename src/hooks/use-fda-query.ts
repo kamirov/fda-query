@@ -1,4 +1,4 @@
-import { maxConcurrentQueries } from "@/lib/constants";
+import { MAX_CONCURRENT_QUERIES } from "@/lib/constants";
 import { fetchDrugLabel } from "@/lib/fda-api";
 import type { QueryResult } from "@/types";
 import { useCallback, useState } from "react";
@@ -49,7 +49,7 @@ export function useFdaQuery(initialResults?: QueryResults) {
     };
 
     const workers = Array.from(
-      { length: Math.min(maxConcurrentQueries, genericNames.length) },
+      { length: Math.min(MAX_CONCURRENT_QUERIES, genericNames.length) },
       () => runNext(),
     );
     await Promise.all(workers);

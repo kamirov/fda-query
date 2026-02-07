@@ -1,5 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -175,7 +181,7 @@ export function QueryForm() {
             <Input
               id="api-key"
               type="text"
-              placeholder="API Key (optional)"
+              placeholder=""
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
             />
@@ -226,6 +232,9 @@ export function QueryForm() {
             <Card>
               <CardHeader>
                 <CardTitle>Statistics</CardTitle>
+                <CardDescription>
+                  Click to filter results by field
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {!allFinished ? (
@@ -234,7 +243,7 @@ export function QueryForm() {
                     <span>Waiting for all queries to finish…</span>
                   </div>
                 ) : fieldCounts ? (
-                  <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
+                  <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-4">
                     {fieldsToCount.map((field) => (
                       <div
                         key={field}
@@ -248,7 +257,7 @@ export function QueryForm() {
                             "ring-2 ring-primary bg-primary/10",
                         )}
                       >
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-[10px] text-muted-foreground">
                           {field}
                         </span>
                         <span className="mt-1 text-2xl font-semibold">

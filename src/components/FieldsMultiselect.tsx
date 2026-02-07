@@ -18,11 +18,23 @@ export function FieldsMultiselect({
   selected,
   onChange,
 }: FieldsMultiselectProps) {
+  const allSelected =
+    selected.length === FDA_LABEL_FIELDS.length && FDA_LABEL_FIELDS.length > 0;
+  const someSelected = selected.length > 0 && !allSelected;
+
   const toggle = (field: FDAFieldName) => {
     if (selected.includes(field)) {
       onChange(selected.filter((f) => f !== field));
     } else {
       onChange([...selected, field]);
+    }
+  };
+
+  const handleSelectAll = (checked: boolean | "indeterminate") => {
+    if (checked) {
+      onChange([...FDA_LABEL_FIELDS]);
+    } else {
+      onChange([]);
     }
   };
 
@@ -48,6 +60,16 @@ export function FieldsMultiselect({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[400px] p-0" align="start">
+          <label
+            className="flex cursor-pointer items-center gap-2 border-b px-2 py-2 text-sm font-medium hover:bg-accent"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Checkbox
+              checked={allSelected ? true : someSelected ? "indeterminate" : false}
+              onCheckedChange={handleSelectAll}
+            />
+            <span>Select all fields</span>
+          </label>
           <div className="max-h-[300px] overflow-y-auto p-2">
             {FDA_LABEL_FIELDS.map((field) => (
               <label

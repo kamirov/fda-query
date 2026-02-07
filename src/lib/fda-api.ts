@@ -1,5 +1,5 @@
 import type { FDALabelResponse, FDALabelResult } from "@/types";
-import { COMPOUND_QUERY_LIMIT, FDA_API_BASE } from "./constants";
+import { FDA_API_BASE, RESPONSE_LENGTH } from "./constants";
 
 async function fetchBySubstanceName(
   substanceName: string,
@@ -48,11 +48,7 @@ export async function fetchCompoundDrugLabel(
   }
 
   const firstPart = parts[0]!;
-  const data = await fetchBySubstanceName(
-    firstPart,
-    COMPOUND_QUERY_LIMIT,
-    apiKey,
-  );
+  const data = await fetchBySubstanceName(firstPart, RESPONSE_LENGTH, apiKey);
 
   const results = data.results ?? [];
   for (const result of results) {
@@ -80,5 +76,5 @@ export async function fetchDrugLabel(
   if (genericName.includes(";")) {
     return fetchCompoundDrugLabel(genericName, apiKey);
   }
-  return fetchBySubstanceName(genericName, COMPOUND_QUERY_LIMIT, apiKey);
+  return fetchBySubstanceName(genericName, RESPONSE_LENGTH, apiKey);
 }

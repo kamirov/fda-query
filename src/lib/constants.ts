@@ -1,3 +1,3 @@
 export const FDA_API_BASE = "https://api.fda.gov/drug/label.json";
-export const maxConcurrentQueries = 5;
-export const COMPOUND_QUERY_LIMIT = 10;
+export const MAX_CONCURRENT_QUERIES = 10;
+export const RESPONSE_LENGTH = 1;
