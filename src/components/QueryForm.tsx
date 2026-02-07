@@ -2,6 +2,14 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar"
 import { useState } from "react"
 import { toast } from "sonner"
 import { FieldsMultiselect } from "./FieldsMultiselect"
@@ -44,14 +52,17 @@ export function QueryForm() {
   }
 
   const downloadDisabled = Object.keys(results).length === 0 || !allFinished
+  const hasResults = Object.keys(results).length > 0
 
   return (
-    <div className="container mx-auto max-w-2xl space-y-6 py-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>Query openFDA Drug Labels</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+    <SidebarProvider>
+      <Sidebar variant="inset">
+        <SidebarHeader>
+          <div className="flex items-center gap-2 px-2 py-2">
+            <span className="font-semibold">Query openFDA Drug Labels</span>
+          </div>
+        </SidebarHeader>
+        <SidebarContent className="space-y-4 px-4 pb-4">
           <div className="space-y-2">
             <Label htmlFor="api-key">API Key (optional)</Label>
             <Input
@@ -89,25 +100,36 @@ export function QueryForm() {
           >
             Query openFDA
           </Button>
-        </CardContent>
-      </Card>
-
-      {(Object.keys(results).length > 0) && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Results</CardTitle>
-              <DownloadButton results={results} disabled={downloadDisabled} />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ResultsAccordion
-              results={results}
-              selectedFields={selectedFields.length > 0 ? selectedFields : undefined}
-            />
-          </CardContent>
-        </Card>
-      )}
-    </div>
+        </SidebarContent>
+      </Sidebar>
+      <SidebarInset>
+        <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
+          <SidebarTrigger />
+          <span className="font-semibold">Results</span>
+        </header>
+        <main className="flex-1 overflow-auto p-4">
+          {hasResults ? (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Results</CardTitle>
+                  <DownloadButton results={results} disabled={downloadDisabled} />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ResultsAccordion
+                  results={results}
+                  selectedFields={selectedFields.length > 0 ? selectedFields : undefined}
+                />
+              </CardContent>
+            </Card>
+          ) : (
+            <p className="text-muted-foreground">
+              Run a query to see results.
+            </p>
+          )}
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }
