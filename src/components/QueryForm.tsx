@@ -11,13 +11,14 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { useFdaQuery } from "@/hooks/use-fda-query";
-import { getFieldCounts } from "@/lib/count-fields";
+import { getFieldCounts, resultHasField } from "@/lib/count-fields";
 import {
   DEFAULT_FIELDS_TO_COUNT,
   DEFAULT_FIELDS_TO_DISPLAY,
   type FDAFieldName,
 } from "@/lib/fda-fields";
 import { parseGenericNames } from "@/lib/parse-generic-names";
+import { cn } from "@/lib/utils";
 import {
   clearPersistedState,
   loadApiKey,
@@ -50,6 +51,9 @@ export function QueryForm() {
   const [genericList, setGenericList] = useState<string[]>(
     () => initialState?.genericList ?? [],
   );
+  const [selectedFilterFields, setSelectedFilterFields] = useState<
+    Set<FDAFieldName>
+  >(new Set());
 
   const { results, isQuerying, allFinished, query, reset } = useFdaQuery(
     initialState?.results,
@@ -64,7 +68,9 @@ export function QueryForm() {
   }, [apiKey]);
 
   useEffect(() => {
-    const resultsToSave = allFinished ? results : lastPersistedResultsRef.current;
+    const resultsToSave = allFinished
+      ? results
+      : lastPersistedResultsRef.current;
     if (allFinished) {
       lastPersistedResultsRef.current = results;
     }
@@ -75,7 +81,14 @@ export function QueryForm() {
       genericList,
       results: resultsToSave,
     });
-  }, [selectedFields, fieldsToCount, genericInput, genericList, results, allFinished]);
+  }, [
+    selectedFields,
+    fieldsToCount,
+    genericInput,
+    genericList,
+    results,
+    allFinished,
+  ]);
 
   const handleQuery = () => {
     const fromInput = parseGenericNames(genericInput);
@@ -106,7 +119,27 @@ export function QueryForm() {
     setFieldsToCount([...DEFAULT_FIELDS_TO_COUNT]);
     setGenericInput("");
     setGenericList([]);
+    setSelectedFilterFields(new Set());
     reset();
+  };
+
+  const toggleFilterField = (field: FDAFieldName) => {
+    setSelectedFilterFields((prev) => {
+      const next = new Set(prev);
+      if (next.has(field)) next.delete(field);
+      else next.add(field);
+      return next;
+    });
+  };
+
+  const handleStatCardKeyDown = (
+    e: React.KeyboardEvent,
+    field: FDAFieldName,
+  ) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      toggleFilterField(field);
+    }
   };
 
   const downloadDisabled = Object.keys(results).length === 0 || !allFinished;
@@ -118,6 +151,15 @@ export function QueryForm() {
         : null,
     [allFinished, fieldsToCount, results],
   );
+
+  const filteredResults = useMemo(() => {
+    if (selectedFilterFields.size === 0) return results;
+    return Object.fromEntries(
+      Object.entries(results).filter(([, r]) =>
+        [...selectedFilterFields].every((f) => resultHasField(r, f)),
+      ),
+    );
+  }, [results, selectedFilterFields]);
 
   return (
     <SidebarProvider>
@@ -161,12 +203,6 @@ export function QueryForm() {
             onFileUpload={handleFileUpload}
           />
 
-          {genericList.length > 0 && (
-            <p className="text-sm text-muted-foreground">
-              From CSV: {genericList.join(", ")}
-            </p>
-          )}
-
           <div className="flex gap-2">
             <Button onClick={handleQuery} disabled={isQuerying}>
               Query openFDA
@@ -201,7 +237,15 @@ export function QueryForm() {
                     {fieldsToCount.map((field) => (
                       <div
                         key={field}
-                        className="flex flex-col items-center justify-center rounded-lg border bg-card p-4 text-center"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => toggleFilterField(field)}
+                        onKeyDown={(e) => handleStatCardKeyDown(e, field)}
+                        className={cn(
+                          "flex flex-col items-center justify-center rounded-lg border bg-card p-4 text-center cursor-pointer transition-colors hover:bg-accent",
+                          selectedFilterFields.has(field) &&
+                            "ring-2 ring-primary bg-primary/10",
+                        )}
                       >
                         <span className="text-xs text-muted-foreground">
                           {field}
@@ -228,12 +272,19 @@ export function QueryForm() {
                 </div>
               </CardHeader>
               <CardContent>
-                <ResultsAccordion
-                  results={results}
-                  selectedFields={
-                    selectedFields.length > 0 ? selectedFields : undefined
-                  }
-                />
+                {selectedFilterFields.size > 0 &&
+                Object.keys(filteredResults).length === 0 ? (
+                  <p className="text-muted-foreground">
+                    No results match the selected field filters.
+                  </p>
+                ) : (
+                  <ResultsAccordion
+                    results={filteredResults}
+                    selectedFields={
+                      selectedFields.length > 0 ? selectedFields : undefined
+                    }
+                  />
+                )}
               </CardContent>
             </Card>
           ) : (

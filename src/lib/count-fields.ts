@@ -44,6 +44,15 @@ function labelHasField(
   return false
 }
 
+export function resultHasField(
+  result: QueryResult,
+  field: FDAFieldName
+): boolean {
+  if (result.status !== "success" || !result.data?.results) return false
+  const labels = result.data.results as Record<string, unknown>[]
+  return labels.some((label) => labelHasField(label, field))
+}
+
 export function getFieldCounts(
   results: Record<string, QueryResult>,
   fieldsToCount: FDAFieldName[]

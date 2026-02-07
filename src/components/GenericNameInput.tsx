@@ -55,6 +55,7 @@ export function GenericNameInput({
             >
               Upload CSV
             </Button>
+
             <input
               ref={fileInputRef}
               type="file"
