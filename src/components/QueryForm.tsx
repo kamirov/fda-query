@@ -33,7 +33,7 @@ import {
 } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import type { QueryResult } from "@/types";
-import { Loader2 } from "lucide-react";
+import { Github, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DownloadButton } from "./DownloadButton";
@@ -326,9 +326,28 @@ export function QueryForm() {
               </CardContent>
             </Card>
           ) : (
-            <p className="text-muted-foreground">Run a query to see results.</p>
+            <div className="space-y-2 text-muted-foreground">
+              <p>
+                Search openFDA drug labels by generic substance names. Choose
+                which fields to display and to count, run a query, then view,
+                filter, share, or download the results.
+              </p>
+              <p>Run a query to see results.</p>
+            </div>
           )}
         </main>
+        <footer className="flex shrink-0 items-center justify-center gap-2 border-t px-4 py-3 text-sm text-muted-foreground">
+          <span>Made with love by Andrei Khramtsov</span>
+          <a
+            href="https://github.com/kamirov/fda-query"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-muted-foreground transition-colors hover:text-foreground"
+            aria-label="GitHub repository"
+          >
+            <Github className="h-4 w-4" />
+          </a>
+        </footer>
       </SidebarInset>
     </SidebarProvider>
   );
