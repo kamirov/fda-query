@@ -9,6 +9,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
@@ -202,7 +207,32 @@ export function QueryForm() {
         </SidebarHeader>
         <SidebarContent className="space-y-4 px-4 pb-4">
           <div className="space-y-2">
-            <Label htmlFor="api-key">API Key (optional)</Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="api-key">API Key (optional)</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex h-6 w-6 items-center justify-center rounded-full border text-xs text-muted-foreground transition-colors hover:text-foreground"
+                    aria-label="API key help"
+                  >
+                    ?
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 text-sm">
+                  Learn more about{" "}
+                  <a
+                    href="https://open.fda.gov/apis/authentication/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline underline-offset-4 transition-colors hover:text-primary/80"
+                  >
+                    openFDA API keys
+                  </a>
+                  .
+                </PopoverContent>
+              </Popover>
+            </div>
             <Input
               id="api-key"
               type="text"
@@ -213,7 +243,23 @@ export function QueryForm() {
           </div>
 
           <div className="space-y-2">
-            <Label>Fields to display</Label>
+            <div className="flex items-center gap-2">
+              <Label>Fields to display</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex h-6 w-6 items-center justify-center rounded-full border text-xs text-muted-foreground transition-colors hover:text-foreground"
+                    aria-label="Fields to display help"
+                  >
+                    ?
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 text-sm">
+                  We will only show these fields for the drug.
+                </PopoverContent>
+              </Popover>
+            </div>
             <FieldsMultiselect
               selected={selectedFields}
               onChange={setSelectedFields}
@@ -221,7 +267,23 @@ export function QueryForm() {
           </div>
 
           <div className="space-y-2">
-            <Label>Fields to count</Label>
+            <div className="flex items-center gap-2">
+              <Label>Fields to count</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex h-6 w-6 items-center justify-center rounded-full border text-xs text-muted-foreground transition-colors hover:text-foreground"
+                    aria-label="Fields to count help"
+                  >
+                    ?
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 text-sm">
+                  We will report counts for these fields.
+                </PopoverContent>
+              </Popover>
+            </div>
             <FieldsMultiselect
               selected={fieldsToCount}
               onChange={setFieldsToCount}
