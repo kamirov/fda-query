@@ -1,32 +1,57 @@
 import { Button } from "@/components/ui/button";
-import type { DownloadPayload, QueryResult } from "@/types";
+import { flattenForDisplay } from "@/hooks/use-fda-query";
+import type { FDAFieldName } from "@/lib/fda-fields";
+import type { QueryResult } from "@/types";
 import { Download, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import * as XLSX from "xlsx";
 
 type DownloadButtonProps = {
   results: Record<string, QueryResult>;
   disabled: boolean;
+  selectedFields: FDAFieldName[];
 };
 
-export function DownloadButton({ results, disabled }: DownloadButtonProps) {
+export function DownloadButton({
+  results,
+  disabled,
+  selectedFields,
+}: DownloadButtonProps) {
   const handleDownload = () => {
-    const payload: DownloadPayload = {};
-    for (const [genericName, result] of Object.entries(results)) {
-      if (result.status === "success" && result.data) {
-        payload[genericName] = { data: result.data };
-      } else if (result.status === "error" && result.error) {
-        payload[genericName] = { error: result.error };
-      }
-    }
+    try {
+      const header = ["Substance", ...selectedFields];
+      const rows = Object.entries(results).map(([genericName, result]) => {
+        if (result.status === "success" && result.data) {
+          const flat = flattenForDisplay(result.data.results, selectedFields);
+          return [
+            genericName,
+            ...selectedFields.map((field) => flat[field] ?? ""),
+          ];
+        }
+        return [genericName, ...selectedFields.map(() => "")];
+      });
 
-    const blob = new Blob([JSON.stringify(payload, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "fda-results.json";
-    a.click();
-    URL.revokeObjectURL(url);
+      const worksheet = XLSX.utils.aoa_to_sheet([header, ...rows]);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Results");
+
+      const output = XLSX.write(workbook, {
+        bookType: "xlsx",
+        type: "array",
+      });
+      const blob = new Blob([output], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "fda-results.xlsx";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to build Excel download", error);
+      toast.error("Failed to generate Excel download");
+    }
   };
 
   return (

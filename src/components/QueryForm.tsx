@@ -371,6 +371,7 @@ export function QueryForm() {
                     <DownloadButton
                       results={results}
                       disabled={downloadDisabled}
+                      selectedFields={selectedFields}
                     />
                   </div>
                 )}
