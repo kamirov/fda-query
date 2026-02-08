@@ -65,13 +65,21 @@ async function fetchBySubstanceNameWithFallback(
   skip?: number,
 ): Promise<FDALabelResponse> {
   try {
-    return await fetchByOpenFdaField(
+    const data = await fetchByOpenFdaField(
       "substance_name",
       substanceName,
       limit,
       apiKey,
       skip,
     );
+    const results = data.results ?? [];
+    const hasMatch = results.some((result) =>
+      resultMatchesSingleSubstance(result, substanceName),
+    );
+    if (!hasMatch) {
+      throw new Error("No matches found for substance_name");
+    }
+    return data;
   } catch (error) {
     if (!isNoMatchesError(error)) {
       throw error;
@@ -144,6 +152,18 @@ function resultMatchesCompound(
   return parts.every((part) =>
     substances.some((s) => s.toLowerCase().includes(part.toLowerCase())),
   );
+}
+
+function resultMatchesSingleSubstance(
+  result: FDALabelResult,
+  substanceName: string,
+): boolean {
+  const substances = getSubstanceNames(result);
+  if (!Array.isArray(substances) || substances.length !== 1) {
+    return false;
+  }
+  const target = substanceName.toLowerCase();
+  return substances.some((s) => s.toLowerCase().includes(target));
 }
 
 export async function fetchCompoundDrugLabel(
