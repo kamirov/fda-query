@@ -78,13 +78,7 @@ async function fetchBySubstanceNameWithFallback(
     }
   }
 
-  return fetchByOpenFdaField(
-    "brand_name",
-    substanceName,
-    limit,
-    apiKey,
-    skip,
-  );
+  return fetchByOpenFdaField("brand_name", substanceName, limit, apiKey, skip);
 }
 
 function extractTotal(data: FDALabelResponse): number {
