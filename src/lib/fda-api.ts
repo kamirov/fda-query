@@ -81,9 +81,51 @@ async function fetchBySubstanceNameWithFallback(
   return fetchByOpenFdaField("brand_name", substanceName, limit, apiKey, skip);
 }
 
-function extractTotal(data: FDALabelResponse): number {
-  const meta = data.meta as { results?: { total?: number } } | undefined;
-  return meta?.results?.total ?? 0;
+async function fetchByCompoundSubstanceNames(
+  parts: string[],
+  limit: number,
+  apiKey?: string,
+  skip?: number,
+): Promise<FDALabelResponse> {
+  const compoundQuery = parts
+    .map((part) => encodeURIComponent(part))
+    .join("+AND+");
+  const search = `search=openfda.substance_name:(${compoundQuery})`;
+  const limitParam = `limit=${limit}`;
+  const params = [search, limitParam];
+  if (skip !== undefined) {
+    params.push(`skip=${skip}`);
+  }
+  if (apiKey) {
+    params.unshift(`api_key=${encodeURIComponent(apiKey)}`);
+  }
+  const url = `${FDA_API_BASE}?${params.join("&")}`;
+
+  try {
+    const res = await fetch(url);
+    const data = (await res.json()) as FDALabelResponse;
+
+    if (!res.ok) {
+      const message = data.error?.message ?? `HTTP ${res.status}`;
+      throw new Error(message);
+    }
+
+    if (data.error) {
+      throw new Error(data.error.message ?? "Unknown API error");
+    }
+
+    return data;
+  } catch (error) {
+    if (!isNoMatchesError(error)) {
+      console.error("FDA API compound request failed", {
+        parts,
+        limit,
+        skip,
+        error,
+      });
+    }
+    throw error;
+  }
 }
 
 function getSubstanceNames(result: FDALabelResult): string[] | undefined {
@@ -117,37 +159,25 @@ export async function fetchCompoundDrugLabel(
     throw new Error("Compound name is empty or contains only separators");
   }
 
-  // Count step: fetch total for each substance
-  const totals: Record<string, number> = {};
-  for (const part of parts) {
-    const data = await fetchBySubstanceNameWithFallback(
-      part,
-      RESPONSE_LENGTH,
-      apiKey,
-    );
-    totals[part] = extractTotal(data);
-  }
-
-  console.log("Compound drug counts:", totals);
-
-  const substanceWithLowestTotal = parts.reduce((a, b) =>
-    totals[a]! <= totals[b]! ? a : b,
-  );
-  const total = totals[substanceWithLowestTotal] ?? 0;
-
-  // Paginated search through the substance with lowest total
+  // Paginated search through the compound query
   let skip = 0;
   const limit = COMPOUND_PAGINATION_LIMIT;
   const maxSkip = 25_000;
 
-  while (skip < total && skip <= maxSkip) {
-    const data = await fetchBySubstanceNameWithFallback(
-      substanceWithLowestTotal,
-      limit,
-      apiKey,
-      skip,
-    );
+  while (skip <= maxSkip) {
+    let data: FDALabelResponse;
+    try {
+      data = await fetchByCompoundSubstanceNames(parts, limit, apiKey, skip);
+    } catch (error) {
+      if (isNoMatchesError(error)) {
+        break;
+      }
+      throw error;
+    }
     const batch = data.results ?? [];
+    if (batch.length === 0) {
+      break;
+    }
     for (const result of batch) {
       if (resultMatchesCompound(result, parts)) {
         return {
