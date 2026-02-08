@@ -5,36 +5,86 @@ import {
   RESPONSE_LENGTH,
 } from "./constants";
 
-async function fetchBySubstanceName(
+type OpenFdaField = "substance_name" | "brand_name";
+
+function isNoMatchesError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  return error.message.toLowerCase().includes("no matches found");
+}
+
+async function fetchByOpenFdaField(
+  field: OpenFdaField,
+  value: string,
+  limit: number,
+  apiKey?: string,
+  skip?: number,
+): Promise<FDALabelResponse> {
+  try {
+    const search = `search=openfda.${field}:"${encodeURIComponent(value)}"`;
+    const limitParam = `limit=${limit}`;
+    const params = [search, limitParam];
+    if (skip !== undefined) {
+      params.push(`skip=${skip}`);
+    }
+    if (apiKey) {
+      params.unshift(`api_key=${encodeURIComponent(apiKey)}`);
+    }
+    const url = `${FDA_API_BASE}?${params.join("&")}`;
+
+    const res = await fetch(url);
+    const data = (await res.json()) as FDALabelResponse;
+
+    if (!res.ok) {
+      const message = data.error?.message ?? `HTTP ${res.status}`;
+      throw new Error(message);
+    }
+
+    if (data.error) {
+      throw new Error(data.error.message ?? "Unknown API error");
+    }
+
+    return data;
+  } catch (error) {
+    if (!isNoMatchesError(error)) {
+      console.error("FDA API request failed", {
+        field,
+        value,
+        limit,
+        skip,
+        error,
+      });
+    }
+    throw error;
+  }
+}
+
+async function fetchBySubstanceNameWithFallback(
   substanceName: string,
   limit: number,
   apiKey?: string,
   skip?: number,
 ): Promise<FDALabelResponse> {
-  const search = `search=openfda.substance_name:"${encodeURIComponent(substanceName)}"`;
-  const limitParam = `limit=${limit}`;
-  const params = [search, limitParam];
-  if (skip !== undefined) {
-    params.push(`skip=${skip}`);
-  }
-  if (apiKey) {
-    params.unshift(`api_key=${encodeURIComponent(apiKey)}`);
-  }
-  const url = `${FDA_API_BASE}?${params.join("&")}`;
-
-  const res = await fetch(url);
-  const data = (await res.json()) as FDALabelResponse;
-
-  if (!res.ok) {
-    const message = data.error?.message ?? `HTTP ${res.status}`;
-    throw new Error(message);
+  try {
+    return await fetchByOpenFdaField(
+      "substance_name",
+      substanceName,
+      limit,
+      apiKey,
+      skip,
+    );
+  } catch (error) {
+    if (!isNoMatchesError(error)) {
+      throw error;
+    }
   }
 
-  if (data.error) {
-    throw new Error(data.error.message ?? "Unknown API error");
-  }
-
-  return data;
+  return fetchByOpenFdaField(
+    "brand_name",
+    substanceName,
+    limit,
+    apiKey,
+    skip,
+  );
 }
 
 function extractTotal(data: FDALabelResponse): number {
@@ -76,7 +126,11 @@ export async function fetchCompoundDrugLabel(
   // Count step: fetch total for each substance
   const totals: Record<string, number> = {};
   for (const part of parts) {
-    const data = await fetchBySubstanceName(part, RESPONSE_LENGTH, apiKey);
+    const data = await fetchBySubstanceNameWithFallback(
+      part,
+      RESPONSE_LENGTH,
+      apiKey,
+    );
     totals[part] = extractTotal(data);
   }
 
@@ -93,7 +147,7 @@ export async function fetchCompoundDrugLabel(
   const maxSkip = 25_000;
 
   while (skip < total && skip <= maxSkip) {
-    const data = await fetchBySubstanceName(
+    const data = await fetchBySubstanceNameWithFallback(
       substanceWithLowestTotal,
       limit,
       apiKey,
@@ -123,5 +177,5 @@ export async function fetchDrugLabel(
   if (genericName.includes(";")) {
     return fetchCompoundDrugLabel(genericName, apiKey);
   }
-  return fetchBySubstanceName(genericName, RESPONSE_LENGTH, apiKey);
+  return fetchBySubstanceNameWithFallback(genericName, RESPONSE_LENGTH, apiKey);
 }
