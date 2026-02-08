@@ -77,6 +77,10 @@ async function fetchBySubstanceNameWithFallback(
       resultMatchesSingleSubstance(result, substanceName),
     );
     if (!hasMatch) {
+      const total = data.meta?.results?.total;
+      if (typeof total === "number" && total > limit) {
+        return await fetchSubstanceNameByPagination(substanceName, apiKey);
+      }
       throw new Error("No matches found for substance_name");
     }
     return data;
@@ -164,6 +168,44 @@ function resultMatchesSingleSubstance(
   }
   const target = substanceName.toLowerCase();
   return substances.some((s) => s.toLowerCase().includes(target));
+}
+
+async function fetchSubstanceNameByPagination(
+  substanceName: string,
+  apiKey?: string,
+): Promise<FDALabelResponse> {
+  const limit = 1000;
+  let skip = 0;
+  let total = Number.POSITIVE_INFINITY;
+
+  while (skip < total) {
+    const data = await fetchByOpenFdaField(
+      "substance_name",
+      substanceName,
+      limit,
+      apiKey,
+      skip,
+    );
+    const results = data.results ?? [];
+    for (const result of results) {
+      if (resultMatchesSingleSubstance(result, substanceName)) {
+        return {
+          meta: { composite: true },
+          results: [result],
+        };
+      }
+    }
+    const nextTotal = data.meta?.results?.total;
+    if (typeof nextTotal === "number") {
+      total = nextTotal;
+    }
+    if (results.length === 0) {
+      break;
+    }
+    skip += limit;
+  }
+
+  throw new Error("No matches found for substance_name");
 }
 
 export async function fetchCompoundDrugLabel(
