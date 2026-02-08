@@ -88,7 +88,8 @@ export function GenericNameInput({
                   We only match labels with the same number of substances, and
                   each substance you provide must be contained (case-insensitive,
                   wildcard on both sides) in the <code>substance_name</code>{" "}
-                  field.
+                  field. If a substance name is not found, we also check{" "}
+                  <code>brand_name</code>.
                 </p>
                 <ul className="space-y-2 text-muted-foreground list-disc list-inside">
                   <li>

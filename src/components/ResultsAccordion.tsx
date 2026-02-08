@@ -3,34 +3,34 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion"
-import { CheckCircle, Loader2, XCircle } from "lucide-react"
-import type { FDAFieldName } from "@/lib/fda-fields"
+} from "@/components/ui/accordion";
 import {
   flattenForDisplay,
   getAvailableFieldKeys,
   getMissingSelectedFields,
-} from "@/hooks/use-fda-query"
-import type { QueryResult } from "@/types"
+} from "@/hooks/use-fda-query";
+import type { FDAFieldName } from "@/lib/fda-fields";
+import type { QueryResult } from "@/types";
+import { CheckCircle, Loader2, XCircle } from "lucide-react";
 
 type ResultsAccordionProps = {
-  results: Record<string, QueryResult>
-  selectedFields: FDAFieldName[] | undefined
-  searchTerm?: string
-  openItems?: string[]
-  onOpenItemsChange?: (items: string[]) => void
-}
+  results: Record<string, QueryResult>;
+  selectedFields: FDAFieldName[] | undefined;
+  searchTerm?: string;
+  openItems?: string[];
+  onOpenItemsChange?: (items: string[]) => void;
+};
 
 function StatusIcon({ status }: { status: QueryResult["status"] }) {
   switch (status) {
     case "querying":
-      return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
     case "success":
-      return <CheckCircle className="h-4 w-4 text-green-600" />
+      return <CheckCircle className="h-4 w-4 text-green-600" />;
     case "error":
-      return <XCircle className="h-4 w-4 text-destructive" />
+      return <XCircle className="h-4 w-4 text-destructive" />;
     default:
-      return null
+      return null;
   }
 }
 
@@ -41,12 +41,12 @@ export function ResultsAccordion({
   openItems,
   onOpenItemsChange,
 }: ResultsAccordionProps) {
-  const entries = Object.entries(results)
-  if (entries.length === 0) return null
+  const entries = Object.entries(results);
+  if (entries.length === 0) return null;
 
-  const firstKey = entries[0]?.[0]
-  const highlightTerm = searchTerm?.trim() ?? ""
-  const isControlled = Boolean(openItems && onOpenItemsChange)
+  const firstKey = entries[0]?.[0];
+  const highlightTerm = searchTerm?.trim() ?? "";
+  const isControlled = Boolean(openItems && onOpenItemsChange);
 
   return (
     <Accordion
@@ -88,7 +88,7 @@ export function ResultsAccordion({
         </AccordionItem>
       ))}
     </Accordion>
-  )
+  );
 }
 
 function ResultsTable({
@@ -96,30 +96,28 @@ function ResultsTable({
   selectedFields,
   searchTerm,
 }: {
-  data: unknown[] | undefined
-  selectedFields?: string[]
-  searchTerm: string
+  data: unknown[] | undefined;
+  selectedFields?: string[];
+  searchTerm: string;
 }) {
-  const rows = flattenForDisplay(data, selectedFields)
-  const normalizedTerm = searchTerm.trim().toLowerCase()
-  const hasSearch = normalizedTerm.length > 0
+  const rows = flattenForDisplay(data, selectedFields);
+  const normalizedTerm = searchTerm.trim().toLowerCase();
+  const hasSearch = normalizedTerm.length > 0;
 
   if (Object.keys(rows).length === 0) {
     if (selectedFields && selectedFields.length > 0) {
-      const availableKeys = getAvailableFieldKeys(data)
-      const missing = getMissingSelectedFields(availableKeys, selectedFields)
+      const availableKeys = getAvailableFieldKeys(data);
+      const missing = getMissingSelectedFields(availableKeys, selectedFields);
       if (availableKeys.length > 0) {
         return (
           <div className="space-y-2 text-muted-foreground">
-            <p>
-              The fields {missing.join(", ")} are not present in the data.
-            </p>
+            <p>The fields {missing.join(", ")} are not present in the data.</p>
             <p>Available fields are: {availableKeys.join(", ")}.</p>
           </div>
-        )
+        );
       }
     }
-    return <p className="text-muted-foreground">No data to display</p>
+    return <p className="text-muted-foreground">No data to display</p>;
   }
 
   const filteredEntries = hasSearch
@@ -128,14 +126,14 @@ function ResultsTable({
           field.toLowerCase().includes(normalizedTerm) ||
           value.toLowerCase().includes(normalizedTerm),
       )
-    : Object.entries(rows)
+    : Object.entries(rows);
 
   if (filteredEntries.length === 0) {
     return (
       <p className="text-muted-foreground">
         No fields match the current search.
       </p>
-    )
+    );
   }
 
   return (
@@ -155,24 +153,24 @@ function ResultsTable({
         </tbody>
       </table>
     </div>
-  )
+  );
 }
 
 function renderHighlightedText(text: string, term: string) {
-  if (!term) return text
+  if (!term) return text;
 
-  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-  const regex = new RegExp(escaped, "gi")
-  const parts = text.split(regex)
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(escaped, "gi");
+  const parts = text.split(regex);
 
-  if (parts.length === 1) return text
+  if (parts.length === 1) return text;
 
-  const matches = text.match(regex) ?? []
+  const matches = text.match(regex) ?? [];
 
   return (
     <>
       {parts.map((part, index) => {
-        const match = matches[index]
+        const match = matches[index];
         return (
           <span key={`${index}-${part}`}>
             {part}
@@ -182,8 +180,8 @@ function renderHighlightedText(text: string, term: string) {
               </mark>
             ) : null}
           </span>
-        )
+        );
       })}
     </>
-  )
+  );
 }

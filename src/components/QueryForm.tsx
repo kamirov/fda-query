@@ -322,7 +322,8 @@ export function QueryForm() {
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-64 text-sm">
-                  We will only show these fields for the drug.
+                  We will only show these fields for the drug. Fields ending in{" "}
+                  <code>_table</code> are not displayed.
                 </PopoverContent>
               </Popover>
             </div>
