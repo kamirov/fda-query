@@ -17,6 +17,8 @@ type ResultsAccordionProps = {
   results: Record<string, QueryResult>
   selectedFields: FDAFieldName[] | undefined
   searchTerm?: string
+  openItems?: string[]
+  onOpenItemsChange?: (items: string[]) => void
 }
 
 function StatusIcon({ status }: { status: QueryResult["status"] }) {
@@ -36,18 +38,23 @@ export function ResultsAccordion({
   results,
   selectedFields,
   searchTerm,
+  openItems,
+  onOpenItemsChange,
 }: ResultsAccordionProps) {
   const entries = Object.entries(results)
   if (entries.length === 0) return null
 
   const firstKey = entries[0]?.[0]
   const highlightTerm = searchTerm?.trim() ?? ""
+  const isControlled = Boolean(openItems && onOpenItemsChange)
 
   return (
     <Accordion
       type="multiple"
       className="w-full"
-      defaultValue={firstKey ? [firstKey] : undefined}
+      {...(isControlled
+        ? { value: openItems, onValueChange: onOpenItemsChange }
+        : { defaultValue: firstKey ? [firstKey] : undefined })}
     >
       {entries.map(([genericName, result]) => (
         <AccordionItem key={genericName} value={genericName}>
@@ -94,6 +101,8 @@ function ResultsTable({
   searchTerm: string
 }) {
   const rows = flattenForDisplay(data, selectedFields)
+  const normalizedTerm = searchTerm.trim().toLowerCase()
+  const hasSearch = normalizedTerm.length > 0
 
   if (Object.keys(rows).length === 0) {
     if (selectedFields && selectedFields.length > 0) {
@@ -113,11 +122,27 @@ function ResultsTable({
     return <p className="text-muted-foreground">No data to display</p>
   }
 
+  const filteredEntries = hasSearch
+    ? Object.entries(rows).filter(
+        ([field, value]) =>
+          field.toLowerCase().includes(normalizedTerm) ||
+          value.toLowerCase().includes(normalizedTerm),
+      )
+    : Object.entries(rows)
+
+  if (filteredEntries.length === 0) {
+    return (
+      <p className="text-muted-foreground">
+        No fields match the current search.
+      </p>
+    )
+  }
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <tbody>
-          {Object.entries(rows).map(([field, value]) => (
+          {filteredEntries.map(([field, value]) => (
             <tr key={field} className="border-b">
               <td className="py-2 pr-4 font-medium align-top text-muted-foreground">
                 {renderHighlightedText(field, searchTerm)}

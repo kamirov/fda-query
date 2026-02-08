@@ -12,9 +12,6 @@ type DownloadButtonProps = {
   selectedFields: FDAFieldName[];
 };
 
-const EXCEL_CELL_CHAR_LIMIT = 32767;
-const MAX_FIELDS_IN_TOAST = 6;
-
 export function DownloadButton({
   results,
   disabled,
@@ -34,66 +31,20 @@ export function DownloadButton({
         return [genericName, ...selectedFields.map(() => "")];
       });
 
-      const offenders: Array<{
-        genericName: string;
-        field: string;
-        length: number;
-        preview: string;
-      }> = [];
-
-      for (const row of rows) {
-        const genericName = String(row[0] ?? "");
-        selectedFields.forEach((field, index) => {
-          const value = String(row[index + 1] ?? "");
-          if (value.length > EXCEL_CELL_CHAR_LIMIT) {
-            offenders.push({
-              genericName,
-              field,
-              length: value.length,
-              preview:
-                value.slice(0, 200) + (value.length > 200 ? "…" : ""),
-            });
-          }
-        });
-      }
-
-      if (offenders.length > 0) {
-        const fields = Array.from(new Set(offenders.map((o) => o.field)));
-        const visibleFields = fields.slice(0, MAX_FIELDS_IN_TOAST);
-        const remaining = fields.length - visibleFields.length;
-        const fieldList =
-          remaining > 0
-            ? `${visibleFields.join(", ")} (+${remaining} more)`
-            : visibleFields.join(", ");
-
-        console.error("Excel cell limit exceeded", {
-          limit: EXCEL_CELL_CHAR_LIMIT,
-          offenders,
-        });
-        toast.error(`Excel limit exceeded for fields: ${fieldList}`);
-        return;
-      }
-
       const worksheet = XLSX.utils.aoa_to_sheet([header, ...rows]);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Results");
-
-      const output = XLSX.write(workbook, {
-        bookType: "xlsx",
-        type: "array",
-      });
+      const output = XLSX.utils.sheet_to_csv(worksheet);
       const blob = new Blob([output], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        type: "text/csv;charset=utf-8;",
       });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "fda-results.xlsx";
+      a.download = "fda-results.csv";
       a.click();
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Failed to build Excel download", error);
-      toast.error("Failed to generate Excel download");
+      console.error("Failed to build CSV download", error);
+      toast.error("Failed to generate CSV download");
     }
   };
 

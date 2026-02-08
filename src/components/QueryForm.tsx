@@ -39,7 +39,7 @@ import {
 } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import type { QueryResult } from "@/types";
-import { Github, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Github, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DownloadButton } from "./DownloadButton";
@@ -85,6 +85,8 @@ export function QueryForm() {
   >(new Set());
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearchTerm = useDebounce(searchInput.trim(), 300);
+  const [openItems, setOpenItems] = useState<string[]>([]);
+  const [hasManualOpenOverride, setHasManualOpenOverride] = useState(false);
 
   const { results, isQuerying, allFinished, query, reset } = useFdaQuery(
     substancesFromUrl ? undefined : initialState?.results,
@@ -159,6 +161,8 @@ export function QueryForm() {
     setGenericInput("");
     setGenericList([]);
     setSearchInput("");
+    setOpenItems([]);
+    setHasManualOpenOverride(false);
     setSelectedFilterFields(new Set());
     reset();
   };
@@ -240,6 +244,25 @@ export function QueryForm() {
     selectedFieldKeys,
   ]);
 
+  const resultKeys = useMemo(
+    () => Object.keys(filteredResults),
+    [filteredResults],
+  );
+  const sanitizedOpenItems = openItems.filter((key) =>
+    resultKeys.includes(key),
+  );
+  const defaultOpenItems = resultKeys.length > 0 ? [resultKeys[0]] : [];
+  const effectiveOpenItems = hasSearch
+    ? hasManualOpenOverride
+      ? sanitizedOpenItems
+      : resultKeys
+    : hasManualOpenOverride
+      ? sanitizedOpenItems
+      : defaultOpenItems;
+  const allOpen =
+    resultKeys.length > 0 &&
+    resultKeys.every((key) => effectiveOpenItems.includes(key));
+
   return (
     <SidebarProvider>
       <Sidebar variant="inset">
@@ -307,6 +330,11 @@ export function QueryForm() {
               selected={selectedFields}
               onChange={setSelectedFields}
             />
+            {searchInput.trim().length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                Some fields are hidden due to text filtering.
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -407,7 +435,30 @@ export function QueryForm() {
                   <CardTitle>Search openFDA drug labels</CardTitle>
                 )}
 
-                {hasResults && <CardTitle>Results</CardTitle>}
+                {hasResults && (
+                  <div className="flex items-center gap-3">
+                    <CardTitle>Results</CardTitle>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setOpenItems(allOpen ? [] : resultKeys);
+                        setHasManualOpenOverride(true);
+                      }}
+                      disabled={resultKeys.length === 0}
+                    >
+                      {allOpen ? (
+                        <>
+                          <ChevronUp className="h-4 w-4 inline" />
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="h-4 w-4 inline" />
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
                 {hasResults && (
                   <div className="flex items-center gap-2">
                     <Input
@@ -447,6 +498,13 @@ export function QueryForm() {
                       selectedFields.length > 0 ? selectedFields : undefined
                     }
                     searchTerm={debouncedSearchTerm}
+                    openItems={effectiveOpenItems}
+                    onOpenItemsChange={(items) => {
+                      setOpenItems(
+                        items.filter((key) => resultKeys.includes(key)),
+                      );
+                      setHasManualOpenOverride(true);
+                    }}
                   />
                 )
               ) : (
