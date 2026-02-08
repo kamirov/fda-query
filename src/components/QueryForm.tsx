@@ -21,7 +21,8 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { useFdaQuery } from "@/hooks/use-fda-query";
+import { useDebounce } from "@/hooks/use-debounce";
+import { flattenForDisplay, useFdaQuery } from "@/hooks/use-fda-query";
 import { getFieldCounts, resultHasField } from "@/lib/count-fields";
 import {
   DEFAULT_FIELDS_TO_COUNT,
@@ -82,6 +83,8 @@ export function QueryForm() {
   const [selectedFilterFields, setSelectedFilterFields] = useState<
     Set<FDAFieldName>
   >(new Set());
+  const [searchInput, setSearchInput] = useState("");
+  const debouncedSearchTerm = useDebounce(searchInput.trim(), 300);
 
   const { results, isQuerying, allFinished, query, reset } = useFdaQuery(
     substancesFromUrl ? undefined : initialState?.results,
@@ -155,6 +158,7 @@ export function QueryForm() {
     setFieldsToCount([...DEFAULT_FIELDS_TO_COUNT]);
     setGenericInput("");
     setGenericList([]);
+    setSearchInput("");
     setSelectedFilterFields(new Set());
     reset();
   };
@@ -188,14 +192,53 @@ export function QueryForm() {
     [allFinished, fieldsToCount, results],
   );
 
+  const normalizedSearch = debouncedSearchTerm.toLowerCase();
+  const hasSearch = normalizedSearch.length > 0;
+  const selectedFieldKeys =
+    selectedFields.length > 0 ? selectedFields.map(String) : undefined;
+
   const filteredResults = useMemo(() => {
-    if (selectedFilterFields.size === 0) return results;
-    return Object.fromEntries(
-      Object.entries(results).filter(([, r]) =>
+    let entries = Object.entries(results);
+
+    if (selectedFilterFields.size > 0) {
+      entries = entries.filter(([, r]) =>
         [...selectedFilterFields].every((f) => resultHasField(r, f)),
-      ),
-    );
-  }, [results, selectedFilterFields]);
+      );
+    }
+
+    if (hasSearch) {
+      const matches = (value: string) =>
+        value.toLowerCase().includes(normalizedSearch);
+
+      entries = entries.filter(([genericName, result]) => {
+        if (matches(genericName)) return true;
+
+        if (result.status === "error" && result.error) {
+          return matches(result.error);
+        }
+
+        if (result.status === "success" && result.data?.results) {
+          const flattened = flattenForDisplay(
+            result.data.results,
+            selectedFieldKeys,
+          );
+          return Object.entries(flattened).some(
+            ([field, value]) => matches(field) || matches(value),
+          );
+        }
+
+        return false;
+      });
+    }
+
+    return Object.fromEntries(entries);
+  }, [
+    results,
+    selectedFilterFields,
+    hasSearch,
+    normalizedSearch,
+    selectedFieldKeys,
+  ]);
 
   return (
     <SidebarProvider>
@@ -367,6 +410,14 @@ export function QueryForm() {
                 {hasResults && <CardTitle>Results</CardTitle>}
                 {hasResults && (
                   <div className="flex items-center gap-2">
+                    <Input
+                      type="text"
+                      value={searchInput}
+                      onChange={(e) => setSearchInput(e.target.value)}
+                      placeholder="Filter results"
+                      aria-label="Filter results"
+                      className="w-full max-w-[240px]"
+                    />
                     <ShareButton substances={Object.keys(results)} />
                     <DownloadButton
                       results={results}
@@ -379,10 +430,15 @@ export function QueryForm() {
             </CardHeader>
             <CardContent>
               {hasResults ? (
-                selectedFilterFields.size > 0 &&
                 Object.keys(filteredResults).length === 0 ? (
                   <p className="text-muted-foreground">
-                    No results match the selected field filters.
+                    {selectedFilterFields.size > 0 && hasSearch
+                      ? "No results match the selected field filters or search."
+                      : selectedFilterFields.size > 0
+                        ? "No results match the selected field filters."
+                        : hasSearch
+                          ? "No results match the current search."
+                          : "No results to display."}
                   </p>
                 ) : (
                   <ResultsAccordion
@@ -390,6 +446,7 @@ export function QueryForm() {
                     selectedFields={
                       selectedFields.length > 0 ? selectedFields : undefined
                     }
+                    searchTerm={debouncedSearchTerm}
                   />
                 )
               ) : (

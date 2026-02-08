@@ -16,6 +16,7 @@ import type { QueryResult } from "@/types"
 type ResultsAccordionProps = {
   results: Record<string, QueryResult>
   selectedFields: FDAFieldName[] | undefined
+  searchTerm?: string
 }
 
 function StatusIcon({ status }: { status: QueryResult["status"] }) {
@@ -34,11 +35,13 @@ function StatusIcon({ status }: { status: QueryResult["status"] }) {
 export function ResultsAccordion({
   results,
   selectedFields,
+  searchTerm,
 }: ResultsAccordionProps) {
   const entries = Object.entries(results)
   if (entries.length === 0) return null
 
   const firstKey = entries[0]?.[0]
+  const highlightTerm = searchTerm?.trim() ?? ""
 
   return (
     <Accordion
@@ -51,12 +54,16 @@ export function ResultsAccordion({
           <AccordionTrigger className="py-4">
             <div className="flex min-w-0 flex-1 items-center justify-start gap-2 text-left">
               <StatusIcon status={result.status} />
-              <span className="truncate">{genericName}</span>
+              <span className="truncate">
+                {renderHighlightedText(genericName, highlightTerm)}
+              </span>
             </div>
           </AccordionTrigger>
           <AccordionContent>
             {result.status === "error" && result.error ? (
-              <p className="text-destructive">{result.error}</p>
+              <p className="text-destructive">
+                {renderHighlightedText(result.error, highlightTerm)}
+              </p>
             ) : result.status === "success" && result.data ? (
               <ResultsTable
                 data={result.data.results}
@@ -65,6 +72,7 @@ export function ResultsAccordion({
                     ? selectedFields.map(String)
                     : undefined
                 }
+                searchTerm={highlightTerm}
               />
             ) : (
               <p className="text-muted-foreground">Loading...</p>
@@ -79,9 +87,11 @@ export function ResultsAccordion({
 function ResultsTable({
   data,
   selectedFields,
+  searchTerm,
 }: {
   data: unknown[] | undefined
   selectedFields?: string[]
+  searchTerm: string
 }) {
   const rows = flattenForDisplay(data, selectedFields)
 
@@ -110,13 +120,45 @@ function ResultsTable({
           {Object.entries(rows).map(([field, value]) => (
             <tr key={field} className="border-b">
               <td className="py-2 pr-4 font-medium align-top text-muted-foreground">
-                {field}
+                {renderHighlightedText(field, searchTerm)}
               </td>
-              <td className="py-2 break-words">{value}</td>
+              <td className="py-2 break-words">
+                {renderHighlightedText(value, searchTerm)}
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
     </div>
+  )
+}
+
+function renderHighlightedText(text: string, term: string) {
+  if (!term) return text
+
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  const regex = new RegExp(escaped, "gi")
+  const parts = text.split(regex)
+
+  if (parts.length === 1) return text
+
+  const matches = text.match(regex) ?? []
+
+  return (
+    <>
+      {parts.map((part, index) => {
+        const match = matches[index]
+        return (
+          <span key={`${index}-${part}`}>
+            {part}
+            {match ? (
+              <mark className="rounded-sm bg-primary/20 px-0.5 text-foreground">
+                {match}
+              </mark>
+            ) : null}
+          </span>
+        )
+      })}
+    </>
   )
 }
